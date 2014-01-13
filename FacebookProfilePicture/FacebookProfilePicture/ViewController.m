@@ -113,13 +113,13 @@
                                                delegate:self
                                       cancelButtonTitle:@"OK!"
                                       otherButtonTitles:nil] show];
+                    
+                    id albumId = [result objectForKey:@"id"];
+                    [self uploadToAlbumId:albumId withPicture:picture];
                 } else {
                     // An error occurred, we need to handle the error
                     // See: https://developers.facebook.com/docs/ios/errors
                     NSLog(@"%@", error);
-                    
-                    id albumId = [result objectForKey:@"id"];
-                    [self uploadToAlbumId:albumId withPicture:picture];
                 }
             }];
             
@@ -134,8 +134,27 @@
 - (void)uploadToAlbumId:(id)albumId withPicture:(UIImage*) picture
 {
     NSLog(@"upload to albumId %@", albumId);
-    //FBRequest *photoUploadRequest = [FBRequest requestForUploadPhoto: picture];
-    //photoUploadRequest[@"album"] = "snul";
+    
+    FBRequest *request = [FBRequest requestForUploadPhoto: picture];
+    [request setGraphPath: [NSString stringWithFormat:@"%@/photos", albumId]];
+   
+    [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+        if (!error) {
+            NSLog(@"result: %@", result);
+            NSString *_objectID = [result objectForKey:@"id"];
+            NSString *alertTitle = @"Object successfully created";
+            NSString *alertText = [NSString stringWithFormat:@"An object with id %@ has been created", _objectID];
+            [[[UIAlertView alloc] initWithTitle:alertTitle
+                                        message:alertText
+                                       delegate:self
+                              cancelButtonTitle:@"OK!"
+                              otherButtonTitles:nil] show];
+        } else {
+            // An error occurred, we need to handle the error
+            // See: https://developers.facebook.com/docs/ios/errors
+            NSLog(@"%@", error);
+        }
+    }];
 }
 
 @end
