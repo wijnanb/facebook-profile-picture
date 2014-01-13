@@ -74,59 +74,68 @@
     UIImage *picture = [info objectForKey:UIImagePickerControllerOriginalImage];
     
     
-    
-    [self createAlbum];
-    //FBRequest *photoUploadRequest = [FBRequest requestForUploadPhoto: picture];
-    //photoUploadRequest[@"album"] = "snul";
-    
+    [self uploadWithPicture:picture];
 }
 
-- (void)createAlbum
+- (void)uploadWithPicture:(UIImage*) picture
 {
     NSMutableDictionary<FBOpenGraphObject> *album = [FBGraphObject openGraphObjectForPost];
     album[@"name"] = @"me, my selfies and i";
     album[@"description"] = @"";
     
-    // check if exists
-    
-    FBRequest *readRequest = [FBRequest requestForGraphPath:@"me/albums" graphObject:album];
-    [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+    // check if album with name exists
+    FBRequest *readRequest = [FBRequest requestForGraphPath:@"me/albums"];
+    [readRequest startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
         if (!error) {
             NSLog(@"result: %@", result);
-            NSString *_objectID = [result objectForKey:@"id"];
-            NSString *alertTitle = @"Object successfully created";
-            NSString *alertText = [NSString stringWithFormat:@"An object with id %@ has been created", _objectID];
-            [[[UIAlertView alloc] initWithTitle:alertTitle
-                                        message:alertText
-                                       delegate:self
-                              cancelButtonTitle:@"OK!"
-                              otherButtonTitles:nil] show];
+           
+            for (NSDictionary *albumData in [result objectForKey:@"data"])
+            {
+                id albumId = [albumData objectForKey:@"id"];
+                NSString *albumName = [albumData objectForKey:@"name"];
+                
+                if ([albumName isEqualToString:[album objectForKey:@"name"]]) {
+                    [self uploadToAlbumId:albumId withPicture:picture];
+                    return;
+                }
+            }
+            
+            // create new album
+            FBRequest *request = [FBRequest requestForPostWithGraphPath:@"me/albums" graphObject:album];
+            [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+                if (!error) {
+                    NSLog(@"result: %@", result);
+                    NSString *_objectID = [result objectForKey:@"id"];
+                    NSString *alertTitle = @"Object successfully created";
+                    NSString *alertText = [NSString stringWithFormat:@"An object with id %@ has been created", _objectID];
+                    [[[UIAlertView alloc] initWithTitle:alertTitle
+                                                message:alertText
+                                               delegate:self
+                                      cancelButtonTitle:@"OK!"
+                                      otherButtonTitles:nil] show];
+                } else {
+                    // An error occurred, we need to handle the error
+                    // See: https://developers.facebook.com/docs/ios/errors
+                    NSLog(@"%@", error);
+                    
+                    id albumId = [result objectForKey:@"id"];
+                    [self uploadToAlbumId:albumId withPicture:picture];
+                }
+            }];
+            
         } else {
             // An error occurred, we need to handle the error
             // See: https://developers.facebook.com/docs/ios/errors
             NSLog(@"%@", error);
         }
     }];
-    
-    
-    FBRequest *request = [FBRequest requestForPostWithGraphPath:@"me/albums" graphObject:album];
-    [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
-        if (!error) {
-            NSLog(@"result: %@", result);
-            NSString *_objectID = [result objectForKey:@"id"];
-            NSString *alertTitle = @"Object successfully created";
-            NSString *alertText = [NSString stringWithFormat:@"An object with id %@ has been created", _objectID];
-            [[[UIAlertView alloc] initWithTitle:alertTitle
-                                        message:alertText
-                                       delegate:self
-                              cancelButtonTitle:@"OK!"
-                              otherButtonTitles:nil] show];
-        } else {
-            // An error occurred, we need to handle the error
-            // See: https://developers.facebook.com/docs/ios/errors
-            NSLog(@"%@", error);
-        }
-    }];
+}
+
+- (void)uploadToAlbumId:(id)albumId withPicture:(UIImage*) picture
+{
+    NSLog(@"upload to albumId %@", albumId);
+    //FBRequest *photoUploadRequest = [FBRequest requestForUploadPhoto: picture];
+    //photoUploadRequest[@"album"] = "snul";
 }
 
 @end

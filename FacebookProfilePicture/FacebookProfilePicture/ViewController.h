@@ -17,7 +17,7 @@
 @property (nonatomic) UIImagePickerController *imagePickerController;
 
 - (void)changePicture;
-- (void)createAlbum;
+- (void)uploadToAlbumId:(id)albumId withPicture:(UIImage*) picture;
 
 @end
 
