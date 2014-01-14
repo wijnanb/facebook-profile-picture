@@ -16,8 +16,12 @@
 
 @property (nonatomic) UIImagePickerController *imagePickerController;
 
+@property (retain, nonatomic) id userId;
+
+
 - (void)changePicture;
 - (void)uploadToAlbumId:(id)albumId withPicture:(UIImage*) picture;
+- (void)setProfilePictureWithId:(id)photoId;
 
 @end
 

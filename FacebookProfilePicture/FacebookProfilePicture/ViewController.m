@@ -49,6 +49,8 @@
 - (void)loginViewFetchedUserInfo:(FBLoginView *)loginView
                             user:(id<FBGraphUser>)user {
     self.profilePictureView.profileID = user.id;
+    self.userId = user.id;
+    
     NSLog(@"logged in as %@", user.id);
 }
 
@@ -104,15 +106,7 @@
             FBRequest *request = [FBRequest requestForPostWithGraphPath:@"me/albums" graphObject:album];
             [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
                 if (!error) {
-                    NSLog(@"result: %@", result);
-                    NSString *_objectID = [result objectForKey:@"id"];
-                    NSString *alertTitle = @"Object successfully created";
-                    NSString *alertText = [NSString stringWithFormat:@"An object with id %@ has been created", _objectID];
-                    [[[UIAlertView alloc] initWithTitle:alertTitle
-                                                message:alertText
-                                               delegate:self
-                                      cancelButtonTitle:@"OK!"
-                                      otherButtonTitles:nil] show];
+                    NSLog(@"Album successfully created. result: %@", result);
                     
                     id albumId = [result objectForKey:@"id"];
                     [self uploadToAlbumId:albumId withPicture:picture];
@@ -140,21 +134,28 @@
    
     [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
         if (!error) {
-            NSLog(@"result: %@", result);
-            NSString *_objectID = [result objectForKey:@"id"];
-            NSString *alertTitle = @"Object successfully created";
-            NSString *alertText = [NSString stringWithFormat:@"An object with id %@ has been created", _objectID];
-            [[[UIAlertView alloc] initWithTitle:alertTitle
-                                        message:alertText
-                                       delegate:self
-                              cancelButtonTitle:@"OK!"
-                              otherButtonTitles:nil] show];
+            NSLog(@"Image successfully uploaded. result: %@", result);
+            
+            id photoId = [result objectForKey:@"id"];
+            [self performSelector:@selector(setProfilePictureWithId:) withObject:photoId afterDelay:1.0];
         } else {
             // An error occurred, we need to handle the error
             // See: https://developers.facebook.com/docs/ios/errors
             NSLog(@"%@", error);
         }
     }];
+}
+
+- (void)setProfilePictureWithId:(id)photoId
+{
+    //NSString *makeProfileUrl = [NSString stringWithFormat:@"https://www.facebook.com/photo.php?fbid=%@&makeprofile=1", photoId];
+    
+    NSString *makeProfileUrlMobile = [NSString stringWithFormat:@"https://m.facebook.com/photo.php?fbid=%@&id=%@&prof&ls=your_photo_permalink&__user=%@", photoId, self.userId, self.userId];
+    
+    NSLog(@"Set profile image to %@", photoId);
+    NSLog(@"Open url: %@", makeProfileUrlMobile);
+    
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString: makeProfileUrlMobile]];
 }
 
 @end
